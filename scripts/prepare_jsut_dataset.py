@@ -84,9 +84,9 @@ def main() -> int:
         logger.info("To download JSUT dataset:")
         logger.info("  mkdir -p dataset/jsut")
         logger.info("  cd dataset/jsut")
-        logger.info("  wget https://github.com/sarulab-speech/jsut_ver1.1/archive/refs/heads/master.zip")
-        logger.info("  unzip master.zip")
-        logger.info("  mv jsut_ver1.1-master/* .")
+        logger.info("  wget http://ss-takashi.sakura.ne.jp/corpus/jsut_ver1.1.zip")
+        logger.info("  unzip jsut_ver1.1.zip")
+        logger.info("  mv jsut_ver1.1/* .")
         logger.info("")
         return 1
 

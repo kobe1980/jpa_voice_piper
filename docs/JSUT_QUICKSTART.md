@@ -30,12 +30,13 @@ mkdir -p dataset/jsut
 cd dataset/jsut
 
 # Télécharger JSUT
-wget https://github.com/sarulab-speech/jsut_ver1.1/archive/refs/heads/master.zip
+# Note: JSUT corpus est hébergé sur le serveur de l'Université de Tokyo
+wget http://ss-takashi.sakura.ne.jp/corpus/jsut_ver1.1.zip
 
 # Extraire
-unzip master.zip
-mv jsut_ver1.1-master/* .
-rm -rf jsut_ver1.1-master master.zip
+unzip jsut_ver1.1.zip
+mv jsut_ver1.1/* .
+rm -rf jsut_ver1.1 jsut_ver1.1.zip
 
 cd ../..
 ```

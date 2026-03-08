@@ -57,12 +57,16 @@ case $CHOICE in
 esac
 
 echo ""
-echo "Downloading JSUT from GitHub..."
+echo "Downloading JSUT corpus..."
 
 cd "$DATASET_DIR"
 
 # Download JSUT
-wget https://github.com/sarulab-speech/jsut_ver1.1/archive/refs/heads/master.zip -O jsut.zip
+# Note: JSUT corpus is hosted on Google Sites, not GitHub
+# Alternative URLs if primary fails:
+# - https://sites.google.com/site/shinnosuketakamichi/research-topics/jsut_ver1.1.zip
+# - http://ss-takashi.sakura.ne.jp/corpus/jsut_ver1.1.zip
+wget http://ss-takashi.sakura.ne.jp/corpus/jsut_ver1.1.zip -O jsut.zip
 
 echo "Extracting..."
 unzip -q jsut.zip

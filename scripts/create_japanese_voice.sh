@@ -132,14 +132,14 @@ echo ""
 print_header "Step 0: Checking Prerequisites"
 
 print_info "Checking required commands..."
-check_command python
+check_command uv
 check_command wget
 check_command unzip
 
 print_info "Checking Python packages..."
-if ! python -c "import pykakasi" 2>/dev/null; then
+if ! uv run python -c "import pykakasi" 2>/dev/null; then
     print_error "Python package 'pykakasi' not found"
-    echo "Run: pip install pykakasi"
+    echo "Run: uv sync --extra audio"
     exit 1
 fi
 
@@ -215,7 +215,7 @@ if [[ $SKIP_PREPARE != true ]]; then
     print_info "Preparing JSUT dataset..."
     print_info "This will take approximately $(estimate_time prepare)"
 
-    python scripts/prepare_jsut_dataset.py \
+    uv run python scripts/prepare_jsut_dataset.py \
         --jsut-dir "dataset/jsut/$JSUT_SUBSET" \
         --output-dir dataset/prepared \
         --sample-rate $SAMPLE_RATE
@@ -249,7 +249,7 @@ if [[ $SKIP_PHONEMIZE != true ]]; then
     print_info "Converting Japanese text to phoneme IDs..."
     print_info "This will take approximately $(estimate_time phonemize)"
 
-    python scripts/phonemize_japanese.py \
+    uv run python scripts/phonemize_japanese.py \
         --input dataset/prepared/metadata.csv \
         --output dataset/prepared/metadata_phonemes.csv \
         --phoneme-map dataset/prepared/phoneme_map.json
@@ -287,7 +287,7 @@ if [[ $SKIP_PREPROCESS != true ]]; then
     print_info "Creating Piper training files..."
     print_info "This will take approximately $(estimate_time preprocess)"
 
-    python scripts/preprocess_piper.py \
+    uv run python scripts/preprocess_piper.py \
         --input-metadata dataset/prepared/metadata_phonemes.csv \
         --phoneme-map dataset/prepared/phoneme_map.json \
         --audio-dir dataset/prepared/wav \
@@ -372,7 +372,7 @@ echo
 if [[ ! $REPLY =~ ^[Yy]$ ]] && [[ ! -z $REPLY ]]; then
     print_info "Training skipped"
     print_info "You can start training manually with:"
-    echo "  python scripts/train_voice.py \\"
+    echo "  uv run python scripts/train_voice.py \\"
     echo "    --dataset-dir training \\"
     echo "    --output-dir output \\"
     echo "    --checkpoint-dir checkpoints \\"
@@ -385,7 +385,7 @@ print_info "This may take $(estimate_time train $TRAINING_MODE)"
 print_info "Press Ctrl+C to interrupt (training can be resumed)"
 echo ""
 
-python scripts/train_voice.py \
+uv run python scripts/train_voice.py \
     --dataset-dir training \
     --output-dir output \
     --checkpoint-dir checkpoints \
@@ -416,7 +416,7 @@ print_info "Using checkpoint: $LATEST_CHECKPOINT"
 mkdir -p models
 
 print_info "Exporting to ONNX format..."
-python -m piper_train.export_onnx \
+uv run python -m piper_train.export_onnx \
     "$LATEST_CHECKPOINT" \
     models/voice_ja_jsut.onnx
 
@@ -485,7 +485,7 @@ echo ""
 if [[ $TRAINING_MODE == "fast" ]]; then
     print_warning "Fast experiment mode was used (100 epochs)"
     print_info "For better quality, retrain with:"
-    echo "  python scripts/train_voice.py \\"
+    echo "  uv run python scripts/train_voice.py \\"
     echo "    --dataset-dir training \\"
     echo "    --output-dir output \\"
     echo "    --checkpoint-dir checkpoints \\"
