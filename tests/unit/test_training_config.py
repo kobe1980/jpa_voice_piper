@@ -98,8 +98,11 @@ class TestTrainingConfig:
         """Test that config is immutable."""
         config = TrainingConfig()
 
-        with pytest.raises(Exception):  # FrozenInstanceError
+        with pytest.raises(Exception) as exc_info:  # FrozenInstanceError
             config.batch_size = 64  # type: ignore
+        assert "frozen" in str(exc_info.value).lower() or "cannot" in str(
+            exc_info.value
+        ).lower()
 
     def test_config_for_gpu_factory(self) -> None:
         """Test factory method for GPU config."""
