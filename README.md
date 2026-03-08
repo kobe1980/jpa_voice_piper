@@ -1,113 +1,67 @@
-# Japanese Voice for Piper TTS (JSUT Corpus)
+# 🎌 Piper Voice - Japanese TTS Dataset Creation
 
-High-quality Japanese voice training for Piper TTS using the JSUT corpus, following the official procedure from [rhasspy/piper](https://github.com/rhasspy/piper).
+> **Create high-quality Japanese TTS voice models for Piper using the JSUT corpus**
 
-## About
+This project provides a complete pipeline to create Japanese Text-to-Speech voice models compatible with [Piper TTS](https://github.com/rhasspy/piper), using Domain-Driven Design (DDD) architecture and Test-Driven Development (TDD).
 
-This project creates the **first Japanese voice for Piper TTS** using the JSUT (Japanese Speech Corpus of Saruwatari Lab, University of Tokyo). The trained model will be contributed to the open source community.
+## ✨ Features
 
-**Goal**: Train `ja_JP-jsut-medium.onnx` - a medium-quality Japanese voice model.
+- 🎯 **One-Command Pipeline**: Automated A-Z workflow from dataset to voice model
+- 📦 **JSUT Corpus Support**: Use free, professional-quality Japanese speech corpus (~7,300 utterances)
+- 🧠 **Custom Phonemization**: Hiragana-as-phonemes strategy bypassing espeak-ng (~100 phonemes)
+- 🚀 **Transfer Learning**: 10-50x faster training with base checkpoints
+- 🔧 **Hardware Auto-Detection**: GPU/MPS/CPU with optimized configurations
+- 📊 **Quality Validation**: Automatic audio quality checks (SNR, clipping, silence)
+- 🏗️ **Clean Architecture**: DDD + TDD + Hexagonal Architecture
+- 🧪 **266 Tests**: 76% coverage, all quality gates passing
 
-## Status
-
-**Phase 1 COMPLETE** ✅: Domain foundation and architecture (15% complete)
-
-- Domain entities (Voice, AudioSample, Transcript, Phoneme)
-- Quality validation framework (SNR, clipping, duration checks)
-- Port definitions for infrastructure
-- 36 unit tests, 100% domain coverage
-
-**Remaining**: Infrastructure, phonetization, training (85% not started)
-
-## Quick Start
+## 🚀 Quick Start (One Command)
 
 ```bash
-# Bootstrap the environment
+# Clone and setup
+git clone https://github.com/kobe1980/jpa_voice_piper.git
+cd jpa_voice_piper
+
+# Install dependencies
 ./scripts/bootstrap.sh
 
-# Run tests
-./scripts/test.sh
+# Create Japanese voice model (one command!)
+./scripts/create_japanese_voice.sh
 ```
 
-## Pipeline
+This will:
+1. ✅ Download JSUT corpus (~10 min)
+2. ✅ Prepare dataset (~30-60 min)
+3. ✅ Phonemize corpus (~3-5 min)
+4. ✅ Preprocess for Piper (~5-10 min)
+5. ✅ Train voice model (~30 min to 2 days depending on hardware)
+6. ✅ Export to ONNX (~1 min)
+7. ✅ Test your voice!
 
-**JSUT download → audio normalization → kanji→hiragana → phoneme IDs → Piper preprocessing → training (French checkpoint) → ONNX export**
+**Total time:** ~2-3 hours (fast experiment with GPU)
 
-## Key Technical Decisions
+## 📖 Documentation
 
-- **Corpus**: JSUT (~7,300 utterances, 10h, single female speaker)
-- **Phonetization**: Hiragana-as-phonemes (using pykakasi, no espeak-ng)
-- **Training**: Transfer learning from French checkpoint (fr_FR-siwis-medium)
-- **Sample Rate**: 22050 Hz
-- **Quality**: Medium (MOS target ~3.5)
+- **[JSUT Quickstart Guide](docs/JSUT_QUICKSTART.md)** - Step-by-step manual workflow
+- **[CLAUDE.md](CLAUDE.md)** - Architecture, TDD rules, DDD principles
 
-## Requirements
+## 🎯 Usage
 
-- Python 3.11+
-- UV package manager
-- pykakasi (for kanji→hiragana conversion)
-- Piper training tools
-- macOS or Linux
-- GPU/MPS recommended for training
+```bash
+# Fast experiment (100 epochs, ~2-3 hours with GPU)
+./scripts/create_japanese_voice.sh --fast
 
-## Documentation
+# High quality (5000 epochs, ~1-2 days with GPU)
+./scripts/create_japanese_voice.sh --high-quality
 
-- [STORY-001](docs/product/stories/STORY-001-japanese-voice-jsut.md) - What we're building (Japanese voice with JSUT)
-- [ADR-001](docs/product/decisions/ADR-001-japanese-voice-architecture.md) - Technical decisions (hiragana phonetization, transfer learning)
-- [CLAUDE.md](CLAUDE.md) - Development workflow and rules
-- [Original Plan](docs/plans/active/plan_japanese_voice_training.md) - Detailed 7-phase implementation plan
-
-## Project Structure
-
-```
-piper_voice/
-├── core/                 # Domain layer (100% complete)
-│   ├── entities.py      # Voice, AudioSample, Transcript, Phoneme
-│   ├── value_objects.py # SampleRate, Duration, AudioQuality, AudioFormat
-│   └── ports.py         # Infrastructure interfaces
-│
-├── infrastructure/       # Adapters (0% - not started)
-│   ├── audio/           # Audio processing (librosa, soundfile)
-│   ├── phonetics/       # pykakasi wrapper for hiragana
-│   ├── filesystem/      # Safe filesystem with guardrails
-│   └── piper/           # Piper training coordination
-│
-└── application/          # Use cases (0% - not started)
-    └── (orchestration logic)
-
-dataset/
-├── raw/                 # JSUT corpus (to be downloaded)
-└── wav/                 # Normalized audio 22050Hz
-
-training/                # Piper preprocessed data
-models/                  # Trained ONNX models
-checkpoints/             # Training checkpoints
+# Skip download if JSUT already exists
+./scripts/create_japanese_voice.sh --skip-download --fast
 ```
 
-## Roadmap
+See [JSUT_QUICKSTART.md](docs/JSUT_QUICKSTART.md) for manual step-by-step workflow.
 
-| Phase | Status | Description |
-|-------|--------|-------------|
-| 1. Foundation | ✅ COMPLETE | Domain entities, quality framework |
-| 2. JSUT Infrastructure | 🔴 TODO | Download, normalize JSUT corpus |
-| 3. Phonetization | 🔴 TODO | pykakasi integration, hiragana→IDs |
-| 4. Training Prep | 🔴 TODO | Piper preprocessing, config |
-| 5. Training | 🔴 TODO | Transfer learning from French |
-| 6. Export | 🔴 TODO | ONNX export, testing |
+---
 
-**Timeline**: 3-4 weeks total (1 week complete)
+**Made with ❤️ for the Japanese TTS community**
 
-## Why This Matters
-
-- **First Japanese voice** in Piper TTS ecosystem
-- **Open source** and freely usable
-- **Documented process** for future Japanese voices
-- **Foundation** for Japanese TTS accessibility and applications
-
-## License
-
-MIT (code) + CC BY-SA 4.0 (trained model - matching JSUT corpus license)
-
-## Contributing
-
-This project follows strict TDD and DDD principles. See [CLAUDE.md](CLAUDE.md) for development workflow.
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
