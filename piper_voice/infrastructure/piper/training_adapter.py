@@ -31,34 +31,54 @@ class PiperTrainingAdapter:
         Returns:
             Subprocess handle for training process
         """
-        # Build piper_train command
+        # Build piper.train command
+        # Note: piper.train expects a CSV file with phonemes and a phoneme_type
+        # We use the metadata_phonemes.csv from dataset preparation
+        csv_path = dataset_dir.parent / "dataset" / "prepared" / "metadata_phonemes.csv"
+        audio_dir = dataset_dir.parent / "dataset" / "prepared" / "wav"
+        cache_dir = dataset_dir
+        config_path = dataset_dir / "config.json"
+
         cmd = [
             "python",
             "-m",
-            "piper_train",
-            "--dataset-dir",
-            str(dataset_dir),
-            "--output-dir",
-            str(output_dir),
-            "--batch-size",
+            "piper.train",
+            "fit",
+            "--data.voice_name",
+            "ja_JP-jsut-medium",
+            "--data.csv_path",
+            str(csv_path),
+            "--data.audio_dir",
+            str(audio_dir),
+            "--model.sample_rate",
+            "22050",
+            "--data.espeak_voice",
+            "ja",
+            "--data.cache_dir",
+            str(cache_dir),
+            "--data.config_path",
+            str(config_path),
+            "--data.batch_size",
             str(config.batch_size),
-            "--learning-rate",
+            "--model.learning_rate",
             str(config.learning_rate),
-            "--max-epochs",
+            "--trainer.max_epochs",
             str(config.max_epochs),
-            "--val-split",
+            "--data.validation_split",
             str(config.validation_split),
-            "--checkpoint-epochs",
+            "--trainer.check_val_every_n_epoch",
             str(config.checkpoint_epochs),
-            "--gradient-clip-val",
-            str(config.gradient_clip_val),
-            "--accelerator",
+            # Note: gradient_clip_val removed because Piper uses manual optimization
+            # which doesn't support automatic gradient clipping in PyTorch Lightning
+            "--trainer.accelerator",
             config.accelerator.value,
+            "--data.phoneme_type",
+            "text",  # Use text phonemes from metadata_phonemes.csv
         ]
 
         # Add resume checkpoint if provided
         if resume_checkpoint:
-            cmd.extend(["--resume-from-checkpoint", str(resume_checkpoint)])
+            cmd.extend(["--ckpt_path", str(resume_checkpoint)])
 
         logger.info(f"Starting training with command: {' '.join(cmd)}")
 
@@ -85,6 +105,7 @@ class PiperTrainingAdapter:
         if process.stdout is None:
             return
 
+        # Read stdout
         for line in process.stdout:
             line = line.strip()
             if not line:
@@ -105,10 +126,14 @@ class PiperTrainingAdapter:
                 except (IndexError, ValueError) as e:
                     logger.debug(f"Could not parse metrics from line: {line} ({e})")
 
-        # Wait for process to complete
+        # Wait for process to complete and capture any remaining output
         return_code = process.wait()
 
-        if return_code == 0:
-            training_run.complete()
-        else:
+        # Log stderr if training failed
+        if return_code != 0 and process.stderr:
+            stderr_output = process.stderr.read()
+            if stderr_output:
+                logger.error(f"Training failed with stderr:\n{stderr_output}")
             training_run.fail()
+        else:
+            training_run.complete()
