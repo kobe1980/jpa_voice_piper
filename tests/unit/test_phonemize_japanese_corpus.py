@@ -5,7 +5,7 @@ Tests the application layer orchestration for Japanese phonemization.
 """
 
 from pathlib import Path
-from unittest.mock import Mock, call
+from unittest.mock import Mock
 
 import pytest
 
@@ -13,8 +13,7 @@ from piper_voice.application.phonemize_japanese_corpus import (
     PhonemeCorpusConfig,
     phonemize_japanese_corpus,
 )
-from piper_voice.core.entities import PhonemeMap
-from piper_voice.core.value_objects import HiraganaText, PhonemeSequence
+from piper_voice.core.value_objects import HiraganaText
 
 
 class TestPhonemeCorpusConfig:
@@ -285,7 +284,9 @@ class TestPhonemizeJapaneseCorpus:
         output_csv = tmp_path / "metadata_phonemes.csv"
         phoneme_map_json = tmp_path / "phoneme_map.json"
 
-        input_csv.write_text("audio_001.wav|こんにちは、元気ですか。\n", encoding="utf-8")
+        input_csv.write_text(
+            "audio_001.wav|こんにちは、元気ですか。\n", encoding="utf-8"
+        )
 
         config = PhonemeCorpusConfig(
             input_metadata=input_csv,
