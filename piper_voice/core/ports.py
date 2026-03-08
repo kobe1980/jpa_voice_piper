@@ -9,7 +9,7 @@ The domain depends on these abstract interfaces, never on concrete implementatio
 from pathlib import Path
 from typing import Protocol
 
-from piper_voice.core.value_objects import AudioQuality
+from piper_voice.core.value_objects import AudioQuality, HiraganaText, PhonemeSequence
 
 
 class AudioProcessorPort(Protocol):
@@ -260,5 +260,50 @@ class PiperTrainingPort(Protocol):
         Raises:
             FileNotFoundError: If checkpoint doesn't exist
             ValueError: If export fails
+        """
+        ...
+
+
+class KanjiConverterPort(Protocol):
+    """Port for kanji-to-hiragana conversion.
+
+    Infrastructure adapters (e.g., pykakasi) must implement this interface
+    to provide Japanese text conversion capabilities.
+    """
+
+    def convert_to_hiragana(self, text: str) -> HiraganaText:
+        """Convert Japanese text (kanji + kana) to pure hiragana.
+
+        Args:
+            text: Japanese text (may contain kanji, hiragana, katakana)
+
+        Returns:
+            HiraganaText value object (validated pure hiragana)
+
+        Raises:
+            ValueError: If conversion fails or produces invalid hiragana
+        """
+        ...
+
+
+class PhonetizerPort(Protocol):
+    """Port for text-to-phoneme conversion.
+
+    Infrastructure adapters must implement this interface to provide
+    phonemization capabilities for TTS training.
+    """
+
+    def phonemize(self, text: HiraganaText) -> PhonemeSequence:
+        """Convert hiragana text to phoneme ID sequence.
+
+        Args:
+            text: Hiragana text to phonemize
+
+        Returns:
+            PhonemeSequence with phoneme IDs
+
+        Raises:
+            KeyError: If text contains character not in phoneme map
+            ValueError: If phonemization fails
         """
         ...
