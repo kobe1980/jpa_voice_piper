@@ -7,6 +7,8 @@ related entities.
 
 import re
 from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
 from pathlib import Path
 
 from piper_voice.core.value_objects import (
@@ -339,3 +341,62 @@ class PhonemeMap:
     def __len__(self) -> int:
         """Return number of phonemes in map."""
         return len(self.phonemes)
+
+
+# Training entities
+
+
+class TrainingState(Enum):
+    """Training run states."""
+
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    INTERRUPTED = "interrupted"
+
+
+@dataclass
+class TrainingRun:
+    """Training run entity.
+
+    Tracks the state and metrics of a training run.
+    """
+
+    id: str
+    state: TrainingState = TrainingState.PENDING
+    current_epoch: int = 0
+    train_loss: float | None = None
+    validation_loss: float | None = None
+    best_checkpoint: str | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+
+    def start(self) -> None:
+        """Mark training as started."""
+        self.state = TrainingState.RUNNING
+        self.started_at = datetime.now()
+
+    def update_metrics(
+        self, epoch: int, train_loss: float, validation_loss: float | None = None
+    ) -> None:
+        """Update training metrics."""
+        self.current_epoch = epoch
+        self.train_loss = train_loss
+        if validation_loss is not None:
+            self.validation_loss = validation_loss
+
+    def complete(self) -> None:
+        """Mark training as completed."""
+        self.state = TrainingState.COMPLETED
+        self.completed_at = datetime.now()
+
+    def fail(self) -> None:
+        """Mark training as failed."""
+        self.state = TrainingState.FAILED
+        self.completed_at = datetime.now()
+
+    def interrupt(self) -> None:
+        """Mark training as interrupted."""
+        self.state = TrainingState.INTERRUPTED
+        self.completed_at = datetime.now()
