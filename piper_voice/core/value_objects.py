@@ -5,6 +5,7 @@ They enforce domain invariants and validation rules.
 """
 
 from dataclasses import dataclass
+from enum import Enum
 
 
 @dataclass(frozen=True)
@@ -244,3 +245,77 @@ class PhonemeSequence:
     def __len__(self) -> int:
         """Return number of phonemes in sequence."""
         return len(self.ids)
+
+
+# Training value objects
+
+
+class HardwareAccelerator(Enum):
+    """Hardware accelerator types for training."""
+
+    GPU = "gpu"  # CUDA GPU
+    MPS = "mps"  # Apple Silicon GPU
+    CPU = "cpu"  # CPU only
+
+
+@dataclass(frozen=True)
+class TrainingConfig:
+    """Training configuration value object.
+
+    Immutable configuration for Piper voice training with validated hyperparameters.
+    """
+
+    batch_size: int = 32
+    learning_rate: float = 1e-4
+    max_epochs: int = 1000
+    validation_split: float = 0.1
+    checkpoint_epochs: int = 50
+    gradient_clip_val: float = 1.0
+    accelerator: HardwareAccelerator = HardwareAccelerator.GPU
+
+    def __post_init__(self) -> None:
+        """Validate configuration on creation."""
+        if not 1 <= self.batch_size <= 128:
+            raise ValueError("Batch size must be between 1 and 128")
+
+        if not 1e-6 <= self.learning_rate <= 1e-2:
+            raise ValueError("Learning rate must be between 1e-6 and 1e-2")
+
+        if not 1 <= self.max_epochs <= 10000:
+            raise ValueError("Max epochs must be between 1 and 10000")
+
+        if not 0.05 <= self.validation_split <= 0.3:
+            raise ValueError("Validation split must be between 0.05 and 0.3")
+
+        if not 1 <= self.checkpoint_epochs <= 100:
+            raise ValueError("Checkpoint epochs must be between 1 and 100")
+
+        if not 0.1 <= self.gradient_clip_val <= 5.0:
+            raise ValueError("Gradient clip val must be between 0.1 and 5.0")
+
+    @classmethod
+    def for_gpu(cls) -> "TrainingConfig":
+        """Create config optimized for GPU training."""
+        return cls(accelerator=HardwareAccelerator.GPU, batch_size=32)
+
+    @classmethod
+    def for_mps(cls) -> "TrainingConfig":
+        """Create config optimized for Apple Silicon (MPS) training."""
+        return cls(accelerator=HardwareAccelerator.MPS, batch_size=16)
+
+    @classmethod
+    def for_cpu(cls) -> "TrainingConfig":
+        """Create config optimized for CPU training."""
+        return cls(accelerator=HardwareAccelerator.CPU, batch_size=8)
+
+    @classmethod
+    def for_fast_experiment(cls) -> "TrainingConfig":
+        """Create config for fast experimentation (100 epochs)."""
+        return cls(max_epochs=100, checkpoint_epochs=10)
+
+    @classmethod
+    def for_high_quality(cls) -> "TrainingConfig":
+        """Create config for high quality training (5000 epochs)."""
+        return cls(
+            max_epochs=5000, learning_rate=5e-5, checkpoint_epochs=100
+        )
