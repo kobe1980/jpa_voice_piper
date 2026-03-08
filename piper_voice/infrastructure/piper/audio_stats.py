@@ -5,10 +5,13 @@ for use in Piper TTS training normalization.
 """
 
 import json
+import logging
 import wave
 from pathlib import Path
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 class AudioStatsCalculator:
@@ -30,7 +33,7 @@ class AudioStatsCalculator:
             expected_sample_rate: Optional sample rate validation (16000 or 22050)
 
         Returns:
-            Dictionary with mean, std, min, max, sample_count
+            Dictionary with mean, std, min, max, sample_count, and corrupted_files
 
         Raises:
             ValueError: If no files provided or sample rate validation fails
@@ -41,47 +44,67 @@ class AudioStatsCalculator:
 
         all_samples = []
         total_samples = 0
+        skipped_files = []
 
         for audio_file in audio_files:
             if not audio_file.exists():
                 raise FileNotFoundError(f"Audio file not found: {audio_file}")
 
             # Load audio samples
-            with wave.open(str(audio_file), "rb") as wav_file:
-                sample_rate = wav_file.getframerate()
-                num_channels = wav_file.getnchannels()
-                sample_width = wav_file.getsampwidth()
+            try:
+                with wave.open(str(audio_file), "rb") as wav_file:
+                    sample_rate = wav_file.getframerate()
+                    num_channels = wav_file.getnchannels()
+                    sample_width = wav_file.getsampwidth()
 
-                # Validate sample rate if specified
-                if expected_sample_rate is not None:
-                    if sample_rate != expected_sample_rate:
+                    # Validate sample rate if specified
+                    if expected_sample_rate is not None:
+                        if sample_rate != expected_sample_rate:
+                            raise ValueError(
+                                f"Sample rate must be {expected_sample_rate} Hz, "
+                                f"got {sample_rate} Hz in {audio_file.name}"
+                            )
+
+                    # Read frames
+                    num_frames = wav_file.getnframes()
+                    frames = wav_file.readframes(num_frames)
+
+                    # Convert to numpy array
+                    if sample_width == 2:  # 16-bit PCM
+                        samples = np.frombuffer(frames, dtype=np.int16)
+                    else:
                         raise ValueError(
-                            f"Sample rate must be {expected_sample_rate} Hz, "
-                            f"got {sample_rate} Hz in {audio_file.name}"
+                            f"Unsupported sample width: {sample_width} bytes "
+                            f"(expected 2 bytes for 16-bit PCM)"
                         )
 
-                # Read frames
-                num_frames = wav_file.getnframes()
-                frames = wav_file.readframes(num_frames)
+                    # Handle stereo → mono if needed
+                    if num_channels == 2:
+                        samples = samples.reshape(-1, 2).mean(axis=1)
 
-                # Convert to numpy array
-                if sample_width == 2:  # 16-bit PCM
-                    samples = np.frombuffer(frames, dtype=np.int16)
-                else:
-                    raise ValueError(
-                        f"Unsupported sample width: {sample_width} bytes "
-                        f"(expected 2 bytes for 16-bit PCM)"
-                    )
+                    # Normalize to [-1, 1] range
+                    samples_normalized = samples.astype(np.float32) / 32768.0
 
-                # Handle stereo → mono if needed
-                if num_channels == 2:
-                    samples = samples.reshape(-1, 2).mean(axis=1)
+                    all_samples.append(samples_normalized)
+                    total_samples += len(samples_normalized)
+            except wave.Error as e:
+                logger.warning(
+                    "Skipping corrupted WAV file %s: %s", audio_file.name, e
+                )
+                skipped_files.append(audio_file)
+                continue
 
-                # Normalize to [-1, 1] range
-                samples_normalized = samples.astype(np.float32) / 32768.0
+        if not all_samples:
+            raise ValueError(
+                f"No valid audio files found ({len(skipped_files)} corrupted)"
+            )
 
-                all_samples.append(samples_normalized)
-                total_samples += len(samples_normalized)
+        if skipped_files:
+            logger.warning(
+                "Skipped %d corrupted file(s) out of %d total",
+                len(skipped_files),
+                len(audio_files),
+            )
 
         # Concatenate all samples
         all_samples_array = np.concatenate(all_samples)
@@ -93,6 +116,7 @@ class AudioStatsCalculator:
             "min": float(np.min(all_samples_array)),
             "max": float(np.max(all_samples_array)),
             "sample_count": total_samples,
+            "corrupted_files": [f.name for f in skipped_files],
         }
 
         return stats

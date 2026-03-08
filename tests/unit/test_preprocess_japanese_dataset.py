@@ -288,15 +288,19 @@ class TestPreprocessJapaneseDataset:
         result = PreprocessResult(
             success=True,
             total_samples=100,
+            skipped_samples=0,
             phoneme_count=95,
             dataset_jsonl=Path("dataset.jsonl"),
             config_json=Path("config.json"),
             audio_stats_json=Path("audio_norm_stats.json"),
+            corrupted_files=[],
         )
 
         assert result.success is True
         assert result.total_samples == 100
+        assert result.skipped_samples == 0
         assert result.phoneme_count == 95
+        assert result.corrupted_files == []
 
     # Helper methods
 

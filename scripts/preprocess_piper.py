@@ -169,6 +169,11 @@ def main() -> int:
     # Report results
     logger.info("✅ Preprocessing complete!")
     logger.info(f"Total samples: {result.total_samples}")
+
+    if result.skipped_samples > 0:
+        logger.warning(f"Skipped samples: {result.skipped_samples} (corrupted files)")
+        logger.warning(f"Corrupted files: {', '.join(result.corrupted_files)}")
+
     logger.info(f"Unique phonemes: {result.phoneme_count}")
     logger.info("")
     logger.info("Output files:")
@@ -178,7 +183,15 @@ def main() -> int:
     logger.info("")
     logger.info("Next steps:")
     logger.info("1. Verify outputs are correct")
-    logger.info("2. Run Piper training:")
+
+    if result.corrupted_files:
+        corrupted_list = ", ".join(result.corrupted_files)
+        logger.info(f"2. Fix or remove corrupted files: {corrupted_list}")
+        logger.info("3. Run preprocessing again")
+        logger.info("4. Run Piper training:")
+    else:
+        logger.info("2. Run Piper training:")
+
     logger.info(f"   python -m piper_train --dataset-dir {args.output_dir} ...")
 
     return 0

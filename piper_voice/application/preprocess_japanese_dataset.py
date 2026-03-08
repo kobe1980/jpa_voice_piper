@@ -3,12 +3,13 @@
 This use case orchestrates the complete preprocessing pipeline:
 1. Validate inputs
 2. Load phoneme map
-3. Transform metadata CSV → JSONL
+3. Transform metadata CSV → JSONL (with audio validation)
 4. Calculate audio normalization statistics
 5. Generate Piper config.json
 6. Validate outputs
 """
 
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -18,6 +19,8 @@ from piper_voice.infrastructure.piper.config_generator import PiperConfigGenerat
 from piper_voice.infrastructure.piper.preprocessor_adapter import (
     PiperPreprocessorAdapter,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -46,18 +49,22 @@ class PreprocessResult:
     Attributes:
         success: Whether preprocessing succeeded
         total_samples: Total number of samples processed
+        skipped_samples: Number of samples skipped (corrupted files)
         phoneme_count: Number of unique phonemes in map
         dataset_jsonl: Path to generated dataset.jsonl
         config_json: Path to generated config.json
         audio_stats_json: Path to generated audio_norm_stats.json
+        corrupted_files: List of corrupted filenames
     """
 
     success: bool
     total_samples: int
+    skipped_samples: int
     phoneme_count: int
     dataset_jsonl: Path
     config_json: Path
     audio_stats_json: Path
+    corrupted_files: list[str]
 
 
 def preprocess_japanese_dataset(config: PreprocessConfig) -> PreprocessResult:
@@ -102,17 +109,25 @@ def preprocess_japanese_dataset(config: PreprocessConfig) -> PreprocessResult:
     # Phase 2: Load phoneme map
     phoneme_map = PhonemeMap.load_from_json(config.phoneme_map_path)
 
-    # Phase 3: Transform metadata CSV → JSONL
+    # Phase 3: Transform metadata CSV → JSONL with audio validation
     preprocessor = PiperPreprocessorAdapter()
-    preprocessor.transform_to_jsonl(
+    transform_result = preprocessor.transform_to_jsonl(
         input_metadata=config.input_metadata,
         output_jsonl=dataset_jsonl,
         audio_dir=config.audio_dir,
+        validate_audio=True,  # Enable corrupted file detection
     )
 
-    # Count samples
-    jsonl_lines = dataset_jsonl.read_text(encoding="utf-8").strip().split("\n")
-    total_samples = len(jsonl_lines)
+    total_samples = transform_result["total_entries"]
+    skipped_samples = transform_result["skipped_entries"]
+    corrupted_files = transform_result["corrupted_files"]
+
+    if corrupted_files:
+        logger.warning(
+            "Skipped %d corrupted file(s) during preprocessing: %s",
+            len(corrupted_files),
+            ", ".join(corrupted_files),
+        )
 
     # Phase 4: Calculate audio normalization statistics
     audio_files = list(config.audio_dir.glob("*.wav"))
@@ -135,8 +150,10 @@ def preprocess_japanese_dataset(config: PreprocessConfig) -> PreprocessResult:
     return PreprocessResult(
         success=True,
         total_samples=total_samples,
+        skipped_samples=skipped_samples,
         phoneme_count=len(phoneme_map.phonemes),
         dataset_jsonl=dataset_jsonl,
         config_json=config_json,
         audio_stats_json=audio_stats_json,
+        corrupted_files=corrupted_files,
     )
