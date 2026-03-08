@@ -27,6 +27,7 @@ from piper_voice.application.train_japanese_voice import (
     train_japanese_voice,
 )
 from piper_voice.core.value_objects import HardwareAccelerator, TrainingConfig
+from piper_voice.infrastructure.piper.hardware_detector import HardwareDetector
 
 # Configure logging
 logging.basicConfig(
@@ -143,12 +144,20 @@ def main() -> int:
     # Build training configuration
     training_config: TrainingConfig | None = None
 
+    # Detect hardware for optimal batch size selection
+    hardware_detector = HardwareDetector()
+    detected_accelerator = hardware_detector.detect()
+
     if args.fast_experiment:
         logger.info("Using fast experiment configuration")
-        training_config = TrainingConfig.for_fast_experiment()
+        training_config = TrainingConfig.for_fast_experiment(
+            accelerator=detected_accelerator
+        )
     elif args.high_quality:
         logger.info("Using high quality configuration")
-        training_config = TrainingConfig.for_high_quality()
+        training_config = TrainingConfig.for_high_quality(
+            accelerator=detected_accelerator
+        )
     elif any(
         [
             args.batch_size,

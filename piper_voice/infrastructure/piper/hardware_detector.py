@@ -17,7 +17,7 @@ class HardwareDetector:
             HardwareAccelerator enum (GPU > MPS > CPU)
         """
         try:
-            import torch  # type: ignore[import-not-found]
+            import torch
 
             if torch.cuda.is_available():
                 device_name = torch.cuda.get_device_name(0)

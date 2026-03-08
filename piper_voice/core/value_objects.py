@@ -309,13 +309,38 @@ class TrainingConfig:
         return cls(accelerator=HardwareAccelerator.CPU, batch_size=8)
 
     @classmethod
-    def for_fast_experiment(cls) -> "TrainingConfig":
-        """Create config for fast experimentation (100 epochs)."""
-        return cls(max_epochs=100, checkpoint_epochs=10)
+    def for_fast_experiment(
+        cls, accelerator: HardwareAccelerator = HardwareAccelerator.GPU
+    ) -> "TrainingConfig":
+        """Create config for fast experimentation (100 epochs).
+
+        Args:
+            accelerator: Hardware accelerator type (auto-determines optimal batch size)
+        """
+        # Use smaller batch size for MPS to avoid OOM
+        batch_size = 8 if accelerator == HardwareAccelerator.MPS else 32
+        return cls(
+            max_epochs=100,
+            checkpoint_epochs=10,
+            batch_size=batch_size,
+            accelerator=accelerator
+        )
 
     @classmethod
-    def for_high_quality(cls) -> "TrainingConfig":
-        """Create config for high quality training (5000 epochs)."""
+    def for_high_quality(
+        cls, accelerator: HardwareAccelerator = HardwareAccelerator.GPU
+    ) -> "TrainingConfig":
+        """Create config for high quality training (5000 epochs).
+
+        Args:
+            accelerator: Hardware accelerator type (auto-determines optimal batch size)
+        """
+        # Use smaller batch size for MPS to avoid OOM
+        batch_size = 8 if accelerator == HardwareAccelerator.MPS else 32
         return cls(
-            max_epochs=5000, learning_rate=5e-5, checkpoint_epochs=100
+            max_epochs=5000,
+            learning_rate=5e-5,
+            checkpoint_epochs=100,
+            batch_size=batch_size,
+            accelerator=accelerator
         )
