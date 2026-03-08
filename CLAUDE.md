@@ -1,6 +1,6 @@
 # CLAUDE.md — Piper Voice Dataset Creation Project (macOS, Python)
 
-Ce projet vise à créer un dataset vocal français de qualité pour Piper TTS, suivant la procédure officielle du projet [rhasspy/piper](https://github.com/rhasspy/piper).
+Ce projet vise à créer une voix japonaise de qualité pour Piper TTS en utilisant le corpus JSUT, suivant la procédure officielle du projet [rhasspy/piper](https://github.com/rhasspy/piper).
 
 Le dataset pourra être reversé à la communauté open source.
 
@@ -269,7 +269,7 @@ python scripts/prepare_dataset.py
 
 # 5. Preprocessing Piper
 python -m piper_train.preprocess \
-  --language fr-fr \
+  --language ja-jp \
   --input-dir ./dataset \
   --output-dir ./training \
   --dataset-format ljspeech \
@@ -531,7 +531,7 @@ Sinon :
 
 ## Contribution open source
 
-Ce projet vise à contribuer une nouvelle voix française à Piper TTS.
+Ce projet vise à contribuer la première voix japonaise à Piper TTS.
 
 **Checklist avant contribution :**
 - [ ] Dataset complet (min 10h audio de qualité)
