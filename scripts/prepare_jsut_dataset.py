@@ -19,15 +19,9 @@ import logging
 import sys
 from pathlib import Path
 
-from piper_voice.application.prepare_dataset import (
-    DatasetConfig,
-    prepare_dataset,
-)
-from piper_voice.core.value_objects import SampleRate
+from piper_voice.application.prepare_dataset import PrepareDatasetUseCase
 from piper_voice.infrastructure.audio.processor import LibrosaAudioProcessor
-from piper_voice.infrastructure.filesystem.jsut_loader import JSUTLoader
-from piper_voice.infrastructure.filesystem.metadata_writer import MetadataWriter
-from piper_voice.infrastructure.filesystem.safe_fs import SafeFilesystem
+from piper_voice.infrastructure.filesystem.safe_fs import SafeFileSystem
 
 # Configure logging
 logging.basicConfig(
@@ -99,19 +93,15 @@ def main() -> int:
     # Create output directory
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Initialize components
-    jsut_loader = JSUTLoader()
-    audio_processor = LibrosaAudioProcessor()
-    metadata_writer = MetadataWriter()
-    filesystem = SafeFilesystem()
+    # Determine project root (current working directory)
+    project_root = Path.cwd()
 
-    # Create configuration
-    sample_rate = SampleRate(args.sample_rate)
-    config = DatasetConfig(
-        input_dir=args.jsut_dir,
-        output_dir=args.output_dir,
-        sample_rate=sample_rate,
-    )
+    # Initialize components
+    audio_processor = LibrosaAudioProcessor()
+    filesystem = SafeFileSystem(project_root)
+
+    # Create use case
+    use_case = PrepareDatasetUseCase(filesystem, audio_processor)
 
     # Print configuration
     logger.info("=" * 80)
@@ -125,12 +115,12 @@ def main() -> int:
     try:
         # Prepare dataset
         logger.info("Starting dataset preparation...")
-        result = prepare_dataset(
-            config=config,
-            dataset_loader=jsut_loader,
-            audio_processor=audio_processor,
-            metadata_writer=metadata_writer,
-            filesystem=filesystem,
+        result = use_case.execute(
+            jsut_root=args.jsut_dir,
+            output_dir=args.output_dir,
+            target_sample_rate=args.sample_rate,
+            validate_quality=False,  # Skip quality validation for JSUT (already high quality)
+            normalize_audio=True,     # Normalize to target sample rate
         )
 
         # Print results
@@ -138,44 +128,38 @@ def main() -> int:
         logger.info("Preparation Results")
         logger.info("=" * 80)
         logger.info(f"Success: {result.success}")
+        logger.info(f"Message: {result.message}")
         logger.info(f"Total samples: {result.total_samples}")
-        logger.info(f"Valid samples: {result.valid_samples}")
-        logger.info(f"Invalid samples: {result.invalid_samples}")
-        logger.info(f"Total duration: {result.total_duration_seconds:.1f} seconds")
-        logger.info(f"Output metadata: {result.metadata_path}")
+        logger.info(f"Failed samples: {result.failed_samples}")
+        logger.info(f"Valid samples: {result.total_samples - result.failed_samples}")
         logger.info("=" * 80)
-
-        if result.errors:
-            logger.warning(f"Encountered {len(result.errors)} errors:")
-            for error in result.errors[:10]:  # Show first 10 errors
-                logger.warning(f"  - {error}")
-            if len(result.errors) > 10:
-                logger.warning(f"  ... and {len(result.errors) - 10} more")
 
         if result.success:
             logger.info("✅ Dataset preparation completed successfully!")
             logger.info("")
             logger.info("Next steps:")
-            logger.info(f"  1. Phonemize corpus:")
-            logger.info(f"     python scripts/phonemize_japanese.py \\")
-            logger.info(f"       --input {result.metadata_path} \\")
-            logger.info(f"       --output {args.output_dir}/metadata_phonemes.csv \\")
-            logger.info(f"       --phoneme-map {args.output_dir}/phoneme_map.json")
+            logger.info(f"  1. Verify metadata.csv:")
+            logger.info(f"     head -n 5 {args.output_dir}/metadata.csv")
             logger.info("")
-            logger.info(f"  2. Preprocess for Piper:")
-            logger.info(f"     python scripts/preprocess_piper.py \\")
-            logger.info(f"       --input-metadata {args.output_dir}/metadata_phonemes.csv \\")
-            logger.info(f"       --phoneme-map {args.output_dir}/phoneme_map.json \\")
-            logger.info(f"       --audio-dir {args.output_dir}/wav \\")
-            logger.info(f"       --output-dir training \\")
+            logger.info(f"  2. Check normalized audio files:")
+            logger.info(f"     ls -lh {args.output_dir}/wav/ | head")
+            logger.info("")
+            logger.info(f"  3. Preprocess for Piper training:")
+            logger.info(f"     python -m piper_train.preprocess \\")
+            logger.info(f"       --language ja-jp \\")
+            logger.info(f"       --input-dir {args.output_dir} \\")
+            logger.info(f"       --output-dir ./training \\")
+            logger.info(f"       --dataset-format ljspeech \\")
+            logger.info(f"       --single-speaker \\")
             logger.info(f"       --sample-rate {args.sample_rate}")
             logger.info("")
-            logger.info(f"  3. Train voice model:")
-            logger.info(f"     python scripts/train_voice.py \\")
-            logger.info(f"       --dataset-dir training \\")
-            logger.info(f"       --output-dir output \\")
-            logger.info(f"       --checkpoint-dir checkpoints \\")
-            logger.info(f"       --fast-experiment")
+            logger.info(f"  4. Train voice model:")
+            logger.info(f"     python -m piper_train \\")
+            logger.info(f"       --dataset-dir ./training \\")
+            logger.info(f"       --accelerator 'gpu' \\")
+            logger.info(f"       --devices 1 \\")
+            logger.info(f"       --batch-size 32 \\")
+            logger.info(f"       --max_epochs 10000")
             return 0
         else:
             logger.error("❌ Dataset preparation failed!")

@@ -300,8 +300,12 @@ class TrainingConfig:
 
     @classmethod
     def for_mps(cls) -> "TrainingConfig":
-        """Create config optimized for Apple Silicon (MPS) training."""
-        return cls(accelerator=HardwareAccelerator.MPS, batch_size=16)
+        """Create config optimized for Apple Silicon (MPS) training.
+
+        Uses smaller batch size (8) to prevent OOM errors and improve stability
+        with MPS backend.
+        """
+        return cls(accelerator=HardwareAccelerator.MPS, batch_size=8)
 
     @classmethod
     def for_cpu(cls) -> "TrainingConfig":

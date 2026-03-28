@@ -116,7 +116,7 @@ class TestTrainingConfig:
         config = TrainingConfig.for_mps()
 
         assert config.accelerator == HardwareAccelerator.MPS
-        assert config.batch_size == 16  # Smaller for MPS
+        assert config.batch_size == 8  # Smaller for MPS stability
 
     def test_config_for_cpu_factory(self) -> None:
         """Test factory method for CPU config."""

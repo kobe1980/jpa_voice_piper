@@ -72,8 +72,8 @@ echo "Extracting..."
 unzip -q jsut.zip
 
 # Move files
-mv jsut_ver1.1-master/* .
-rm -rf jsut_ver1.1-master
+mv jsut_ver1.1/* .
+rm -rf jsut_ver1.1
 rm jsut.zip
 
 echo ""

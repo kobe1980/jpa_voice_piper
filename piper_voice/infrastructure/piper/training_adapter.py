@@ -76,6 +76,12 @@ class PiperTrainingAdapter:
             "text",  # Use text phonemes from metadata_phonemes.csv
         ]
 
+        # MPS (Apple Silicon) has issues with multiprocessing in dataloaders
+        # Set num_workers=0 to disable multiprocessing and prevent semaphore leaks
+        if config.accelerator.value == "mps":
+            logger.info("Disabling dataloader workers for MPS stability")
+            cmd.extend(["--data.num_workers", "0"])
+
         # Add resume checkpoint if provided
         if resume_checkpoint:
             cmd.extend(["--ckpt_path", str(resume_checkpoint)])

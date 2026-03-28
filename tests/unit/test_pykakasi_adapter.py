@@ -94,28 +94,36 @@ class TestPykakasiAdapter:
         with pytest.raises(ValueError, match="cannot be empty"):
             adapter.convert_to_hiragana("   \t\n  ")
 
-    def test_convert_numbers_rejected(self) -> None:
-        """Test that numbers are rejected (can't convert to valid hiragana)."""
+    def test_convert_numbers_to_hiragana(self) -> None:
+        """Test that numbers are normalized to their Japanese hiragana readings."""
         adapter = PykakasiAdapter()
 
-        # pykakasi keeps numbers as-is, which are not valid hiragana
-        # HiraganaText validation should reject this
-        with pytest.raises(ValueError, match="non-hiragana characters"):
-            adapter.convert_to_hiragana("123")
+        result = adapter.convert_to_hiragana("123")
 
-    def test_convert_latin_characters_handled(self) -> None:
-        """Test that latin characters are handled."""
+        assert isinstance(result, HiraganaText)
+        # 123 → ひゃくにじゅうさん
+        assert result.value == "ひゃくにじゅうさん"
+
+    def test_convert_fullwidth_numbers_to_hiragana(self) -> None:
+        """Test that fullwidth numbers are normalized to hiragana readings."""
         adapter = PykakasiAdapter()
 
-        # Latin characters can't be converted to hiragana
-        # pykakasi might keep them or convert them
-        # We test that it doesn't crash
-        try:
-            result = adapter.convert_to_hiragana("test")
-            assert isinstance(result, HiraganaText)
-        except ValueError:
-            # It's also acceptable to reject latin-only text
-            pass
+        result = adapter.convert_to_hiragana("１週間")
+
+        assert isinstance(result, HiraganaText)
+        assert "いち" in result.value
+        assert "しゅうかん" in result.value
+
+    def test_convert_latin_characters_to_hiragana(self) -> None:
+        """Test that Latin characters are converted to hiragana readings."""
+        adapter = PykakasiAdapter()
+
+        result = adapter.convert_to_hiragana("CPUを使う")
+
+        assert isinstance(result, HiraganaText)
+        assert "しー" in result.value
+        assert "ぴー" in result.value
+        assert "つかう" in result.value
 
     def test_convert_long_text(self) -> None:
         """Test converting long text."""

@@ -196,6 +196,43 @@ class TestAudioStatsCalculator:
         # Assert
         assert stats is not None
 
+    def test_calculate_stats_skips_corrupted_wav(self, tmp_path: Path) -> None:
+        """Test that corrupted WAV files are skipped with a warning."""
+        # Arrange - Create one valid and one corrupted WAV
+        good_file = tmp_path / "good.wav"
+        self._create_test_wav(good_file, duration_ms=1000, sample_rate=22050)
+
+        bad_file = tmp_path / "bad.wav"
+        # Write a RIFF header with invalid size so wave module can't parse chunks
+        bad_file.write_bytes(
+            b"RIFF" + (8).to_bytes(4, "little") + b"WAVE" + b"\x00" * 100
+        )
+
+        calculator = AudioStatsCalculator()
+
+        # Act - Should succeed using only the good file
+        stats = calculator.calculate_stats([good_file, bad_file])
+
+        # Assert
+        assert stats is not None
+        assert stats["sample_count"] > 0
+
+    def test_calculate_stats_raises_if_all_files_corrupted(
+        self, tmp_path: Path
+    ) -> None:
+        """Test that an error is raised when all files are corrupted."""
+        # Arrange
+        bad_file = tmp_path / "bad.wav"
+        bad_file.write_bytes(
+            b"RIFF" + (8).to_bytes(4, "little") + b"WAVE" + b"\x00" * 100
+        )
+
+        calculator = AudioStatsCalculator()
+
+        # Act & Assert
+        with pytest.raises(ValueError, match="No valid audio files found"):
+            calculator.calculate_stats([bad_file])
+
     # Helper methods
 
     def _create_test_wav(
