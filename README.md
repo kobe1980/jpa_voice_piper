@@ -15,7 +15,29 @@ This project provides a complete pipeline to create Japanese Text-to-Speech voic
 - 🏗️ **Clean Architecture**: DDD + TDD + Hexagonal Architecture
 - 🧪 **266 Tests**: 76% coverage, all quality gates passing
 
-## 🚀 Quick Start (One Command)
+## 🚀 Quick Start
+
+### Windows (Recommended for GPU Training)
+
+```powershell
+# Clone repo (includes 4061 audio samples via Git LFS)
+git clone https://github.com/kobe1980/jpa_voice_piper.git
+cd jpa_voice_piper
+
+# Complete setup (Python, PyTorch GPU, Piper, validation)
+setup_windows.bat
+
+# Launch training
+train_windows.bat
+```
+
+**That's it!** Dataset (5.4 GB) is included via Git LFS.
+
+**Duration:** 6-12 hours on GPU (RTX 3060+) with transfer learning
+
+📖 **See [WINDOWS_QUICKSTART.md](WINDOWS_QUICKSTART.md) for detailed guide**
+
+### macOS / Linux
 
 ```bash
 # Clone and setup
@@ -23,26 +45,24 @@ git clone https://github.com/kobe1980/jpa_voice_piper.git
 cd jpa_voice_piper
 
 # Install dependencies
-./scripts/bootstrap.sh
+./scripts/bootstrap.sh  # or: uv sync --all-extras
 
-# Create Japanese voice model (one command!)
-./scripts/create_japanese_voice.sh
+# Launch training
+python scripts/train_japanese_voice.py
 ```
 
-This will:
-1. ✅ Download JSUT corpus (~10 min)
-2. ✅ Prepare dataset (~30-60 min)
-3. ✅ Phonemize corpus (~3-5 min)
-4. ✅ Preprocess for Piper (~5-10 min)
-5. ✅ Train voice model (~30 min to 2 days depending on hardware)
-6. ✅ Export to ONNX (~1 min)
-7. ✅ Test your voice!
-
-**Total time:** ~2-3 hours (fast experiment with GPU)
+**Duration:** 12-24 hours on Apple Silicon MPS with transfer learning
 
 ## 📖 Documentation
 
-- **[JSUT Quickstart Guide](docs/JSUT_QUICKSTART.md)** - Step-by-step manual workflow
+### Quick Start Guides
+- **[WINDOWS_QUICKSTART.md](WINDOWS_QUICKSTART.md)** - Windows GPU training (recommended)
+- **[JSUT Quickstart Guide](docs/JSUT_QUICKSTART.md)** - Manual dataset preparation
+
+### Training & Architecture
+- **[TRAINING_ON_WINDOWS_GPU.md](TRAINING_ON_WINDOWS_GPU.md)** - Complete Windows setup guide
+- **[TRAINING_FAILURE_REPORT.md](TRAINING_FAILURE_REPORT.md)** - Training diagnostics & solutions
+- **[SUMMARY_AND_NEXT_STEPS.md](SUMMARY_AND_NEXT_STEPS.md)** - Action plan & recommendations
 - **[CLAUDE.md](CLAUDE.md)** - Architecture, TDD rules, DDD principles
 
 ## 🎯 Usage
