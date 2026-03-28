@@ -51,15 +51,20 @@ dmypy.json
 .LSOverride
 
 # Dataset (large files)
+# Note: dataset/prepared/ is included in Git for easy deployment
 dataset/raw/*.wav
 dataset/wav/*.wav
 dataset/*.csv
+!dataset/prepared/*.csv
+!dataset/prepared/*.json
+!dataset/prepared/wav/*.wav
 !dataset/raw/.gitkeep
 !dataset/wav/.gitkeep
 
 # Training artifacts
 training/**
 !training/.gitkeep
+dataset/prepared/training/**
 checkpoints/*.ckpt
 checkpoints/**/*.ckpt
 !checkpoints/.gitkeep
@@ -83,4 +88,3 @@ logs/*.txt
 
 # UV
 .uv/
-uv.lock
