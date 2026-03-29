@@ -1,0 +1,3 @@
+[submodule "piper-training"]
+	path = piper-training
+	url = https://github.com/OHF-voice/piper1-gpl.git

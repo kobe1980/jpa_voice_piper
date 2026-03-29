@@ -20,8 +20,8 @@ This project provides a complete pipeline to create Japanese Text-to-Speech voic
 ### Windows (Recommended for GPU Training)
 
 ```powershell
-# Clone repo (includes 4061 audio samples via Git LFS)
-git clone https://github.com/kobe1980/jpa_voice_piper.git
+# Clone repo with submodules (includes 4061 audio samples via Git LFS)
+git clone --recursive https://github.com/kobe1980/jpa_voice_piper.git
 cd jpa_voice_piper
 
 # Complete setup (Python, PyTorch GPU, Piper, validation)
@@ -36,12 +36,13 @@ train_windows.bat
 **Duration:** 6-12 hours on GPU (RTX 3060+) with transfer learning
 
 📖 **See [WINDOWS_QUICKSTART.md](WINDOWS_QUICKSTART.md) for detailed guide**
+📖 **See [docs/WINDOWS_WSL_SETUP.md](docs/WINDOWS_WSL_SETUP.md) for WSL setup**
 
 ### macOS / Linux
 
 ```bash
-# Clone and setup
-git clone https://github.com/kobe1980/jpa_voice_piper.git
+# Clone with submodules and setup
+git clone --recursive https://github.com/kobe1980/jpa_voice_piper.git
 cd jpa_voice_piper
 
 # Install dependencies
